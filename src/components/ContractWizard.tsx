@@ -8,7 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, ArrowRight, Upload, CheckCircle, AlertTriangle } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { ArrowLeft, ArrowRight, Upload, CheckCircle, AlertTriangle, User, Scale, Shield, Home } from 'lucide-react';
 
 interface ContractWizardProps {
   onBack: () => void;
@@ -18,6 +19,7 @@ interface ContractWizardProps {
 const ContractWizard = ({ onBack, onComplete }: ContractWizardProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
+    userRole: '',
     type: '',
     title: '',
     description: '',
@@ -31,8 +33,35 @@ const ContractWizard = ({ onBack, onComplete }: ContractWizardProps) => {
     documents: [] as File[]
   });
 
-  const totalSteps = 4;
+  const totalSteps = 5; // Updated to include role selection step
   const progress = (currentStep / totalSteps) * 100;
+
+  const userRoles = [
+    {
+      value: 'contracting-party',
+      label: 'Contracting Party',
+      description: 'Direct party to the contract with full rights and obligations',
+      icon: User
+    },
+    {
+      value: 'legal-representative',
+      label: 'Legal Representative',
+      description: 'Lawyer or legal entity representing one of the parties',
+      icon: Scale
+    },
+    {
+      value: 'financial-guarantor',
+      label: 'Private Financial Guarantor',
+      description: 'Third party providing financial guarantees for the contract',
+      icon: Shield
+    },
+    {
+      value: 'agent-realtor',
+      label: 'Agent/Realtor',
+      description: 'Intermediary acting on behalf of one of the parties',
+      icon: Home
+    }
+  ];
 
   const contractTypes = [
     { value: 'property', label: 'Property Rental' },
@@ -64,15 +93,68 @@ const ContractWizard = ({ onBack, onComplete }: ContractWizardProps) => {
     setFormData({ ...formData, documents: [...formData.documents, ...files] });
   };
 
+  const canProceed = () => {
+    switch (currentStep) {
+      case 1:
+        return formData.userRole !== '';
+      case 2:
+        return formData.type !== '' && formData.title !== '';
+      case 3:
+        return formData.amount !== '' && formData.duration !== '' && formData.paymentTerms !== '';
+      case 4:
+        return formData.counterparty !== '' && formData.counterpartyEmail !== '';
+      default:
+        return true;
+    }
+  };
+
   const renderStep = () => {
     switch (currentStep) {
       case 1:
         return (
           <div className="space-y-6">
             <div>
+              <h2 className="text-2xl font-bold mb-4">Select Your Role</h2>
+              <p className="text-muted-foreground mb-6">
+                Choose your role in this contract. This determines your access rights and dashboard filtering.
+              </p>
+            </div>
+            
+            <RadioGroup 
+              value={formData.userRole} 
+              onValueChange={(value) => setFormData({ ...formData, userRole: value })}
+              className="space-y-4"
+            >
+              {userRoles.map((role) => {
+                const Icon = role.icon;
+                return (
+                  <div key={role.value} className="flex items-start space-x-3">
+                    <RadioGroupItem value={role.value} id={role.value} className="mt-1" />
+                    <div className="flex-1 cursor-pointer" onClick={() => setFormData({ ...formData, userRole: role.value })}>
+                      <Label htmlFor={role.value} className="cursor-pointer">
+                        <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                          <Icon className="h-5 w-5 text-primary" />
+                          <div className="flex-1">
+                            <p className="font-medium text-foreground">{role.label}</p>
+                            <p className="text-sm text-muted-foreground">{role.description}</p>
+                          </div>
+                        </div>
+                      </Label>
+                    </div>
+                  </div>
+                );
+              })}
+            </RadioGroup>
+          </div>
+        );
+
+      case 2:
+        return (
+          <div className="space-y-6">
+            <div>
               <h2 className="text-2xl font-bold mb-4">Contract Details</h2>
               <p className="text-muted-foreground mb-6">
-                Let's start by defining the basic information about your contract.
+                Define the basic information about your contract.
               </p>
             </div>
             
@@ -117,7 +199,7 @@ const ContractWizard = ({ onBack, onComplete }: ContractWizardProps) => {
           </div>
         );
 
-      case 2:
+      case 3:
         return (
           <div className="space-y-6">
             <div>
@@ -173,7 +255,7 @@ const ContractWizard = ({ onBack, onComplete }: ContractWizardProps) => {
           </div>
         );
 
-      case 3:
+      case 4:
         return (
           <div className="space-y-6">
             <div>
@@ -251,7 +333,7 @@ const ContractWizard = ({ onBack, onComplete }: ContractWizardProps) => {
           </div>
         );
 
-      case 4:
+      case 5:
         return (
           <div className="space-y-6">
             <div>
@@ -357,12 +439,12 @@ const ContractWizard = ({ onBack, onComplete }: ContractWizardProps) => {
               </Button>
               
               {currentStep === totalSteps ? (
-                <Button onClick={onComplete}>
+                <Button onClick={onComplete} disabled={!canProceed()}>
                   Create Contract
                   <CheckCircle className="h-4 w-4 ml-2" />
                 </Button>
               ) : (
-                <Button onClick={handleNext}>
+                <Button onClick={handleNext} disabled={!canProceed()}>
                   Next
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>

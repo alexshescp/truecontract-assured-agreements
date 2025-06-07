@@ -7,6 +7,7 @@ import Dashboard from '@/components/Dashboard';
 import ContractWizard from '@/components/ContractWizard';
 import ContractReview from '@/components/ContractReview';
 import GuaranteesMarketplace from '@/components/GuaranteesMarketplace';
+import DashboardSummary from '@/components/DashboardSummary';
 import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
@@ -125,6 +126,9 @@ const Index = () => {
     }
   };
 
+  // Show dashboard summary only when authenticated and not on home page
+  const showDashboardSummary = isAuthenticated && currentPage !== 'home';
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation
@@ -133,6 +137,8 @@ const Index = () => {
         isAuthenticated={isAuthenticated}
         onAuthToggle={handleAuthToggle}
       />
+      
+      {showDashboardSummary && <DashboardSummary />}
       
       {renderCurrentPage()}
       
