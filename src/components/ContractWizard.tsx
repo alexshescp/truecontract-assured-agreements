@@ -1,112 +1,149 @@
-
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Progress } from '@/components/ui/progress';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { ArrowLeft, ArrowRight, Upload, CheckCircle, AlertTriangle, User, Scale, Shield, Home } from 'lucide-react';
+import { useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle, Home, Scale, Shield, Upload, User } from "lucide-react";
 
 interface ContractWizardProps {
   onBack: () => void;
   onComplete: () => void;
 }
 
+const INITIAL_FORM_STATE = {
+  userRole: "",
+  type: "",
+  title: "",
+  description: "",
+  duration: "",
+  paymentTerms: "",
+  amount: "",
+  counterparty: "",
+  counterpartyEmail: "",
+  useGuarantor: false,
+  selectedGuarantor: "",
+  documents: [] as File[],
+};
+
+const USER_ROLES = [
+  {
+    value: "contracting-party",
+    label: "Contracting Party",
+    description: "Direct party to the contract with full rights and obligations",
+    icon: User,
+  },
+  {
+    value: "legal-representative",
+    label: "Legal Representative",
+    description: "Lawyer or legal entity representing one of the parties",
+    icon: Scale,
+  },
+  {
+    value: "financial-guarantor",
+    label: "Private Financial Guarantor",
+    description: "Third party providing financial guarantees for the contract",
+    icon: Shield,
+  },
+  {
+    value: "agent-realtor",
+    label: "Agent/Realtor",
+    description: "Intermediary acting on behalf of one of the parties",
+    icon: Home,
+  },
+] as const;
+
+const CONTRACT_TYPES = [
+  { value: "property", label: "Property Rental" },
+  { value: "vehicle", label: "Vehicle Rental" },
+  { value: "service", label: "Service Agreement" },
+  { value: "freelance", label: "Freelance Contract" },
+] as const;
+
+const GUARANTORS = [
+  { id: "1", name: "CityBank Financial", fee: "2.5%", rating: 4.8 },
+  { id: "2", name: "SecureGuarantee Ltd", fee: "3.0%", rating: 4.6 },
+  { id: "3", name: "TrustFactor Corp", fee: "2.8%", rating: 4.7 },
+] as const;
+
 const ContractWizard = ({ onBack, onComplete }: ContractWizardProps) => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState({
-    userRole: '',
-    type: '',
-    title: '',
-    description: '',
-    duration: '',
-    paymentTerms: '',
-    amount: '',
-    counterparty: '',
-    counterpartyEmail: '',
-    useGuarantor: false,
-    selectedGuarantor: '',
-    documents: [] as File[]
-  });
+  const [formData, setFormData] = useState(INITIAL_FORM_STATE);
 
-  const totalSteps = 5; // Updated to include role selection step
+  const totalSteps = 5;
   const progress = (currentStep / totalSteps) * 100;
 
-  const userRoles = [
-    {
-      value: 'contracting-party',
-      label: 'Contracting Party',
-      description: 'Direct party to the contract with full rights and obligations',
-      icon: User
-    },
-    {
-      value: 'legal-representative',
-      label: 'Legal Representative',
-      description: 'Lawyer or legal entity representing one of the parties',
-      icon: Scale
-    },
-    {
-      value: 'financial-guarantor',
-      label: 'Private Financial Guarantor',
-      description: 'Third party providing financial guarantees for the contract',
-      icon: Shield
-    },
-    {
-      value: 'agent-realtor',
-      label: 'Agent/Realtor',
-      description: 'Intermediary acting on behalf of one of the parties',
-      icon: Home
-    }
-  ];
-
-  const contractTypes = [
-    { value: 'property', label: 'Property Rental' },
-    { value: 'vehicle', label: 'Vehicle Rental' },
-    { value: 'service', label: 'Service Agreement' },
-    { value: 'freelance', label: 'Freelance Contract' }
-  ];
-
-  const guarantors = [
-    { id: '1', name: 'CityBank Financial', fee: '2.5%', rating: 4.8 },
-    { id: '2', name: 'SecureGuarantee Ltd', fee: '3.0%', rating: 4.6 },
-    { id: '3', name: 'TrustFactor Corp', fee: '2.8%', rating: 4.7 }
-  ];
+  const updateForm = <K extends keyof typeof formData>(key: K, value: (typeof formData)[K]) => {
+    setFormData((previous) => ({ ...previous, [key]: value }));
+  };
 
   const handleNext = () => {
     if (currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1);
+      setCurrentStep((previous) => previous + 1);
     }
   };
 
   const handlePrevious = () => {
     if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
+      setCurrentStep((previous) => previous - 1);
     }
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    setFormData({ ...formData, documents: [...formData.documents, ...files] });
+    updateForm("documents", [...formData.documents, ...files]);
   };
+
+  const isValidEmail = (value: string) => /[^\s@]+@[^\s@]+\.[^\s@]+/.test(value);
+  const isPositiveAmount = (value: string) => Number(value) > 0;
 
   const canProceed = () => {
     switch (currentStep) {
       case 1:
-        return formData.userRole !== '';
+        return formData.userRole !== "";
       case 2:
-        return formData.type !== '' && formData.title !== '';
+        return formData.type !== "" && formData.title.trim() !== "";
       case 3:
-        return formData.amount !== '' && formData.duration !== '' && formData.paymentTerms !== '';
+        return (
+          formData.amount !== "" &&
+          isPositiveAmount(formData.amount) &&
+          formData.duration !== "" &&
+          formData.paymentTerms !== ""
+        );
       case 4:
-        return formData.counterparty !== '' && formData.counterpartyEmail !== '';
+        return (
+          formData.counterparty.trim() !== "" &&
+          formData.counterpartyEmail.trim() !== "" &&
+          isValidEmail(formData.counterpartyEmail)
+        );
       default:
         return true;
     }
   };
+
+  const summaryDetails = useMemo(
+    () => [
+      { label: "Role", value: USER_ROLES.find((role) => role.value === formData.userRole)?.label ?? "--" },
+      { label: "Contract Type", value: CONTRACT_TYPES.find((type) => type.value === formData.type)?.label ?? "--" },
+      { label: "Title", value: formData.title || "--" },
+      { label: "Value", value: formData.amount ? `$${Number(formData.amount).toLocaleString()}` : "--" },
+      { label: "Payment Terms", value: formData.paymentTerms || "--" },
+      { label: "Duration", value: formData.duration || "--" },
+      { label: "Counterparty", value: formData.counterparty || "--" },
+      { label: "Counterparty Email", value: formData.counterpartyEmail || "--" },
+      {
+        label: "Guarantor",
+        value: formData.useGuarantor
+          ? GUARANTORS.find((guarantor) => guarantor.id === formData.selectedGuarantor)?.name ?? "--"
+          : "Not requested",
+      },
+    ],
+    [formData],
+  );
 
   const renderStep = () => {
     switch (currentStep) {
@@ -119,18 +156,14 @@ const ContractWizard = ({ onBack, onComplete }: ContractWizardProps) => {
                 Choose your role in this contract. This determines your access rights and dashboard filtering.
               </p>
             </div>
-            
-            <RadioGroup 
-              value={formData.userRole} 
-              onValueChange={(value) => setFormData({ ...formData, userRole: value })}
-              className="space-y-4"
-            >
-              {userRoles.map((role) => {
+
+            <RadioGroup value={formData.userRole} onValueChange={(value) => updateForm("userRole", value)} className="space-y-4">
+              {USER_ROLES.map((role) => {
                 const Icon = role.icon;
                 return (
                   <div key={role.value} className="flex items-start space-x-3">
                     <RadioGroupItem value={role.value} id={role.value} className="mt-1" />
-                    <div className="flex-1 cursor-pointer" onClick={() => setFormData({ ...formData, userRole: role.value })}>
+                    <div className="flex-1 cursor-pointer" onClick={() => updateForm("userRole", role.value)}>
                       <Label htmlFor={role.value} className="cursor-pointer">
                         <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-accent/50 transition-colors">
                           <Icon className="h-5 w-5 text-primary" />
@@ -153,20 +186,18 @@ const ContractWizard = ({ onBack, onComplete }: ContractWizardProps) => {
           <div className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold mb-4">Contract Details</h2>
-              <p className="text-muted-foreground mb-6">
-                Define the basic information about your contract.
-              </p>
+              <p className="text-muted-foreground mb-6">Define the basic information about your contract.</p>
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <Label htmlFor="contract-type">Contract Type</Label>
-                <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
+                <Select value={formData.type} onValueChange={(value) => updateForm("type", value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select contract type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {contractTypes.map((type) => (
+                    {CONTRACT_TYPES.map((type) => (
                       <SelectItem key={type.value} value={type.value}>
                         {type.label}
                       </SelectItem>
@@ -174,24 +205,24 @@ const ContractWizard = ({ onBack, onComplete }: ContractWizardProps) => {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div>
                 <Label htmlFor="title">Contract Title</Label>
                 <Input
                   id="title"
                   placeholder="e.g., Downtown Office Lease Agreement"
                   value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  onChange={(event) => updateForm("title", event.target.value)}
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
                   placeholder="Provide a brief description of this contract..."
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(event) => updateForm("description", event.target.value)}
                   rows={4}
                 />
               </div>
@@ -203,12 +234,10 @@ const ContractWizard = ({ onBack, onComplete }: ContractWizardProps) => {
         return (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold mb-4">Terms & Conditions</h2>
-              <p className="text-muted-foreground mb-6">
-                Define the financial and timing aspects of your contract.
-              </p>
+              <h2 className="text-2xl font-bold mb-4">Terms &amp; Conditions</h2>
+              <p className="text-muted-foreground mb-6">Define the financial and timing aspects of your contract.</p>
             </div>
-            
+
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="amount">Contract Value</Label>
@@ -217,13 +246,17 @@ const ContractWizard = ({ onBack, onComplete }: ContractWizardProps) => {
                   type="number"
                   placeholder="10000"
                   value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                  onChange={(event) => updateForm("amount", event.target.value)}
+                  min={0}
                 />
+                {!isPositiveAmount(formData.amount || "0") && formData.amount !== "" && (
+                  <p className="text-xs text-destructive mt-1">Enter a positive amount.</p>
+                )}
               </div>
-              
+
               <div>
                 <Label htmlFor="duration">Duration</Label>
-                <Select value={formData.duration} onValueChange={(value) => setFormData({ ...formData, duration: value })}>
+                <Select value={formData.duration} onValueChange={(value) => updateForm("duration", value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select duration" />
                   </SelectTrigger>
@@ -237,10 +270,10 @@ const ContractWizard = ({ onBack, onComplete }: ContractWizardProps) => {
                 </Select>
               </div>
             </div>
-            
+
             <div>
               <Label htmlFor="payment-terms">Payment Terms</Label>
-              <Select value={formData.paymentTerms} onValueChange={(value) => setFormData({ ...formData, paymentTerms: value })}>
+              <Select value={formData.paymentTerms} onValueChange={(value) => updateForm("paymentTerms", value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select payment terms" />
                 </SelectTrigger>
@@ -259,12 +292,10 @@ const ContractWizard = ({ onBack, onComplete }: ContractWizardProps) => {
         return (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold mb-4">Counterparty & Guarantees</h2>
-              <p className="text-muted-foreground mb-6">
-                Add the other party's information and choose payment protection.
-              </p>
+              <h2 className="text-2xl font-bold mb-4">Counterparty &amp; Guarantees</h2>
+              <p className="text-muted-foreground mb-6">Add the other party's information and choose payment protection.</p>
             </div>
-            
+
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="counterparty">Counterparty Name</Label>
@@ -272,10 +303,10 @@ const ContractWizard = ({ onBack, onComplete }: ContractWizardProps) => {
                   id="counterparty"
                   placeholder="Company or Individual Name"
                   value={formData.counterparty}
-                  onChange={(e) => setFormData({ ...formData, counterparty: e.target.value })}
+                  onChange={(event) => updateForm("counterparty", event.target.value)}
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="counterparty-email">Counterparty Email</Label>
                 <Input
@@ -283,42 +314,41 @@ const ContractWizard = ({ onBack, onComplete }: ContractWizardProps) => {
                   type="email"
                   placeholder="contact@company.com"
                   value={formData.counterpartyEmail}
-                  onChange={(e) => setFormData({ ...formData, counterpartyEmail: e.target.value })}
+                  onChange={(event) => updateForm("counterpartyEmail", event.target.value)}
                 />
+                {formData.counterpartyEmail !== "" && !isValidEmail(formData.counterpartyEmail) && (
+                  <p className="text-xs text-destructive mt-1">Enter a valid email address.</p>
+                )}
               </div>
             </div>
-            
+
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
-                <Checkbox 
+                <Checkbox
                   id="use-guarantor"
                   checked={formData.useGuarantor}
-                  onCheckedChange={(checked) => setFormData({ ...formData, useGuarantor: checked as boolean })}
+                  onCheckedChange={(checked) => updateForm("useGuarantor", Boolean(checked))}
                 />
                 <Label htmlFor="use-guarantor" className="text-sm font-medium">
                   Add Payment Guarantee (Recommended)
                 </Label>
               </div>
-              
+
               {formData.useGuarantor && (
                 <div className="space-y-3 p-4 border rounded-lg bg-accent/20">
                   <h3 className="font-medium">Available Guarantors</h3>
-                  {guarantors.map((guarantor) => (
-                    <div 
+                  {GUARANTORS.map((guarantor) => (
+                    <div
                       key={guarantor.id}
                       className={`p-3 border rounded cursor-pointer transition-colors ${
-                        formData.selectedGuarantor === guarantor.id 
-                          ? 'border-primary bg-primary/5' 
-                          : 'hover:bg-accent/50'
+                        formData.selectedGuarantor === guarantor.id ? "border-primary bg-primary/5" : "hover:bg-accent/50"
                       }`}
-                      onClick={() => setFormData({ ...formData, selectedGuarantor: guarantor.id })}
+                      onClick={() => updateForm("selectedGuarantor", guarantor.id)}
                     >
                       <div className="flex justify-between items-center">
                         <div>
                           <p className="font-medium">{guarantor.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            Rating: {guarantor.rating}/5 ⭐
-                          </p>
+                          <p className="text-sm text-muted-foreground">Rating: {guarantor.rating}/5 ⭐</p>
                         </div>
                         <div className="text-right">
                           <p className="font-medium text-primary">{guarantor.fee}</p>
@@ -337,35 +367,24 @@ const ContractWizard = ({ onBack, onComplete }: ContractWizardProps) => {
         return (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold mb-4">Documents & Review</h2>
+              <h2 className="text-2xl font-bold mb-4">Documents &amp; Review</h2>
               <p className="text-muted-foreground mb-6">
                 Upload supporting documents and review your contract before creation.
               </p>
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <Label>Upload Documents (Optional)</Label>
                 <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
                   <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Drag and drop files here, or click to browse
-                  </p>
-                  <Input
-                    type="file"
-                    multiple
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    id="file-upload"
-                  />
-                  <Button 
-                    variant="outline" 
-                    onClick={() => document.getElementById('file-upload')?.click()}
-                  >
+                  <p className="text-sm text-muted-foreground mb-2">Drag and drop files here, or click to browse</p>
+                  <Input type="file" multiple onChange={handleFileUpload} className="hidden" id="file-upload" />
+                  <Button variant="outline" onClick={() => document.getElementById("file-upload")?.click()}>
                     Choose Files
                   </Button>
                 </div>
-                
+
                 {formData.documents.length > 0 && (
                   <div className="mt-3 space-y-2">
                     {formData.documents.map((file, index) => (
@@ -377,7 +396,7 @@ const ContractWizard = ({ onBack, onComplete }: ContractWizardProps) => {
                   </div>
                 )}
               </div>
-              
+
               <Card className="bg-blue-50 border-blue-200">
                 <CardContent className="pt-6">
                   <div className="flex items-start space-x-3">
@@ -385,11 +404,25 @@ const ContractWizard = ({ onBack, onComplete }: ContractWizardProps) => {
                     <div>
                       <h3 className="font-medium text-blue-900">AI Review Ready</h3>
                       <p className="text-sm text-blue-700">
-                        Once created, our AI will analyze your contract for legal compliance 
-                        and suggest improvements automatically.
+                        Once created, our AI will analyze your contract for legal compliance and suggest improvements automatically.
                       </p>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Submission Checklist</CardTitle>
+                  <CardDescription>Confirm everything looks correct before publishing.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-3 md:grid-cols-2">
+                  {summaryDetails.map((item) => (
+                    <div key={item.label}>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">{item.label}</p>
+                      <p className="text-sm font-medium text-foreground">{item.value}</p>
+                    </div>
+                  ))}
                 </CardContent>
               </Card>
             </div>
@@ -404,40 +437,31 @@ const ContractWizard = ({ onBack, onComplete }: ContractWizardProps) => {
   return (
     <div className="min-h-screen bg-background p-4 md:p-6 lg:p-8">
       <div className="max-w-3xl mx-auto">
-        {/* Header */}
         <div className="mb-8">
           <Button variant="ghost" onClick={onBack} className="mb-4">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
           </Button>
-          
+
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <h1 className="text-3xl font-bold">Create New Contract</h1>
-              <span className="text-sm text-muted-foreground">
-                Step {currentStep} of {totalSteps}
-              </span>
+              <span className="text-sm text-muted-foreground">Step {currentStep} of {totalSteps}</span>
             </div>
             <Progress value={progress} className="h-2" />
           </div>
         </div>
 
-        {/* Content */}
         <Card>
           <CardContent className="p-8">
             {renderStep()}
-            
-            {/* Navigation */}
+
             <div className="flex justify-between mt-8 pt-6 border-t">
-              <Button 
-                variant="outline" 
-                onClick={handlePrevious}
-                disabled={currentStep === 1}
-              >
+              <Button variant="outline" onClick={handlePrevious} disabled={currentStep === 1}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Previous
               </Button>
-              
+
               {currentStep === totalSteps ? (
                 <Button onClick={onComplete} disabled={!canProceed()}>
                   Create Contract

@@ -1,45 +1,87 @@
-**Use your preferred IDE**
+# TrueContract – Assured Agreements Platform
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+TrueContract is a Vite + React application that showcases a modern contract lifecycle experience. The product vision focuses on
+streamlining the creation, review, and risk management of commercial agreements backed by financial guarantees and blockchain
+notarisation.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Key capabilities
 
-Follow these steps:
+- **Portfolio intelligence dashboard** – contextual filters, revenue trends, risk heatmaps, upcoming renewals, and actionable
+  tasks provide a holistic view of contract health.
+- **Guided contract wizard** – a five-step workflow that validates critical fields, captures guarantor preferences, and
+  produces a submission checklist before publishing a new agreement.
+- **Collaborative review workspace** – AI insights, immutable signature metadata, next-best actions, and activity history help
+  teams finalise deals with confidence.
+- **Financial guarantees marketplace** – explore curated guarantors with filtering, search, and rich service descriptions to
+  improve payment assurance.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone https://github.com/alexshescp/truecontract-assured-agreements/
+## Project structure
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+├── src
+│   ├── components
+│   │   ├── Dashboard.tsx           # Main dashboard UI with analytics, filters, tasks, and charts
+│   │   ├── ContractWizard.tsx      # Guided creation flow with validation and submission checklist
+│   │   ├── ContractReview.tsx      # Detailed contract viewer with AI insights and blockchain audit trail
+│   │   ├── GuaranteesMarketplace.tsx
+│   │   └── ...                     # Navigation, landing, and shared UI primitives
+│   ├── lib
+│   │   ├── data
+│   │   │   └── contracts.ts        # Centralised mock data, metrics helpers, and type definitions
+│   │   └── utils.ts                # Tailwind utility merger
+│   ├── pages                       # Route-level wrappers
+│   └── main.tsx / App.tsx          # Application bootstrap
 ```
 
-**Edit a file directly in GitHub**
+## Getting started
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. **Install dependencies**
 
-**Use GitHub Codespaces**
+   ```bash
+   npm install
+   ```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+2. **Run the development server**
 
-## What technologies are used for this project?
+   ```bash
+   npm run dev
+   ```
 
-This project is built with:
+   The app is served at `http://localhost:5173` by default.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+3. **Lint the project**
+
+   ```bash
+   npm run lint
+   ```
+
+## Code style and best practices
+
+- The project uses **TypeScript** for strong typing and centralises domain models inside `src/lib/data/` to keep components
+  presentation-focused.
+- UI state is co-located with the components that render it. Derived data is memoised with `useMemo` to prevent unnecessary
+  re-renders.
+- Mock content lives alongside helper functions (e.g. `formatCurrency`, `countByStatus`). When integrating an API, replace these
+  helpers with data fetching hooks or TanStack Query resources.
+- Tailwind CSS powers the design system. Use semantic class names (`text-muted-foreground`, `bg-card`) to stay consistent with
+  the theme tokens.
+- Prefer small, composable components and dedicated hooks for reusable logic. Each major view (dashboard, wizard, review) now
+  exposes well-commented sections to aid future enhancements.
+
+## Testing strategy
+
+Automated tests are not yet configured for this mock application. For production readiness, consider adding the following:
+
+- Component-level tests with [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/).
+- Integration tests for the wizard and review flows using [Playwright](https://playwright.dev/).
+- Type-driven validations with [Zod](https://github.com/colinhacks/zod) or react-hook-form before persisting data.
+
+## Deployment
+
+The build output is optimised for static hosting. To generate a production build, run:
+
+```bash
+npm run build
+```
+
+You can serve the build output from any modern CDN or integrate it with containerised hosting solutions.
